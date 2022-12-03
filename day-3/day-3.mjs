@@ -19,7 +19,6 @@ function part1() {
 
     for (const item of sharedCompartments) {
       priorityValue += alphabet.indexOf(item) + 1;
-      console.log(`${item} = ${alphabet.indexOf(item) + 1}`);
     }
   }
 
