@@ -32,3 +32,19 @@ function part2() {
 console.log(part1());
 
 console.log(part2());
+
+// Only way seems odd of handing stuff, the 'onlyUniqueCharacters' function did what [... new Set()] does so i rewrote everything!
+
+// much shorter and with less complexity :D 
+
+
+function tuningTrouble(n) {
+  for (let i = n; i < signal.length; i++) {
+    const signalBuffer = signal.slice(n - 3, n);
+    if ([...new Set(signalBuffer)] === signalBuffer.length) return i + 1;
+  }
+}
+
+console.log(tuningTrouble(4));
+
+console.log(tuningTrouble(14));
