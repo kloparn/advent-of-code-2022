@@ -9,9 +9,8 @@ const treeBoard = fs
 //   .split(/\r?\n/)
 //   .reduce((arr, curr) => (arr = [...arr, [...curr.split("")]]), []);
 
-function part1() {
+function setupHasMap() {
   const treesAlreadySeen = {};
-
   for (let y = 1; y < treeBoard.length - 1; y++) {
     // We skip first and last cause we do not care about the bottom or top row
     let minHeighRight = treeBoard[y][treeBoard[y].length - 1];
@@ -71,9 +70,66 @@ function part1() {
     }
   }
 
-  console.log(treesAlreadySeen);
+  return treesAlreadySeen;
+}
 
-  return Object.keys(treesAlreadySeen).length + treeBoard.length * 2 + treeBoard[0].length * 2 - 4;
+const seenTreeshashmap = setupHasMap();
+
+function part1() {
+  return Object.keys(seenTreeshashmap).length + treeBoard.length * 2 + treeBoard[0].length * 2 - 4;
+}
+
+function part2() {
+  const scenaticScoreMap = {};
+  for (let y = 1; y < treeBoard.length - 1; y++) {
+    for (let x = 1; x < treeBoard[y].length - 1; x++) {
+      let up = 0,
+        down = 0,
+        right = 0,
+        left = 0;
+
+      const MaxTreeSize = treeBoard[y][x];
+
+      // up
+      for (let i = y - 1; i >= 0; i--) {
+        if (MaxTreeSize > treeBoard[i][x]) up++;
+        else {
+          up++;
+          break;
+        }
+      }
+      // down
+      for (let i = y + 1; i < treeBoard.length; i++) {
+        if (MaxTreeSize > treeBoard[i][x]) down++;
+        else {
+          down++;
+          break;
+        }
+      }
+
+      // left
+      for (let i = x - 1; i >= 0; i--) {
+        if (MaxTreeSize > treeBoard[y][i]) left++;
+        else {
+          left++;
+          break;
+        }
+      }
+      // right
+      for (let i = x + 1; i < treeBoard[y].length; i++) {
+        if (MaxTreeSize > treeBoard[y][i]) right++;
+        else {
+          right++;
+          break;
+        }
+      }
+
+      scenaticScoreMap[`${y}, ${x}`] = up * down * left * right;
+    }
+  }
+
+  return Object.values(scenaticScoreMap).sort((a, b) => b - a)[0];
 }
 
 console.log(part1());
+console.log(part2());
