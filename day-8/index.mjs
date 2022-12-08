@@ -16,8 +16,6 @@ function setupHasMap() {
     let minHeighRight = treeBoard[y][treeBoard[y].length - 1];
     let minHeigtLeft = treeBoard[y][0];
 
-    // console.log({ minHeighRight, minHeigtLeft, minHeighUp, minHeighDown });
-
     // we check from the right side to left
     for (let x = treeBoard[y].length - 1; x > 0; x--) {
       const treeHeight = treeBoard[y][x];
