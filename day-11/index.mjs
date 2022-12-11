@@ -7,51 +7,34 @@ function parseMonkeysInformation() {
 
   let currentMonkey = 0;
 
-  for (let i = 0; i < data.length; i++) {
-    if (data[i] === "") {
-      currentMonkey++;
-      continue;
-    }
+  for (let i = 0; i < data.length; i += 7) {
+    const monkeyStartingItems = [
+      ...data[i + 1]
+        .split(" ")
+        .map((val) => parseInt(val))
+        .filter((val) => val),
+    ];
 
-    const info = data[i].match(/: (.+)/);
+    const monkeyOperation = `${data[i + 2].split(" ").at(-3)} ${data[i + 2].split(" ").at(-2)} ${data[i + 2].split(" ").at(-1)}`;
 
-    if (!info) {
-      monkeys[currentMonkey] = { monkeyId: currentMonkey, inspectionsDone: 0 };
-      continue;
-    }
+    const monkeyDivisibleBy = parseInt(data[i + 3].split(" ").at(-1));
 
-    const beforeInfo = data[i].match(/(.+):/)[1];
+    const monkeyIfTrue = parseInt(data[i + 4].match(/throw to monkey (\d+)/)[1]);
 
-    if (beforeInfo.includes("Starting items")) {
-      monkeys[currentMonkey].items = [...info[1].split(" ").map((val) => parseInt(val))];
-      continue;
-    }
+    const monkeyIfFalse = parseInt(data[i + 5].match(/throw to monkey (\d+)/)[1]);
 
-    if (beforeInfo.includes("Operation")) {
-      const operationInfo = info[1].split(" ");
-      const value1 = operationInfo.at(-3);
-      const operationType = operationInfo.at(-2);
-      const value2 = operationInfo.at(-1);
+    monkeys[currentMonkey] = {
+      items: monkeyStartingItems,
+      operation: monkeyOperation,
+      test: {
+        divisibleBy: monkeyDivisibleBy,
+        true: monkeyIfTrue,
+        false: monkeyIfFalse,
+      },
+      inspectionsDone: 0,
+    };
 
-      monkeys[currentMonkey].operation = `${value1} ${operationType} ${value2}`;
-
-      continue;
-    }
-
-    if (beforeInfo.includes("Test")) {
-      const divisibleBy = parseInt(info[1].split(" ").at(-1));
-      const ifTrue = parseInt(data[i + 1].match(/throw to monkey (\d+)/)[1]);
-      const ifFalse = parseInt(data[i + 2].match(/throw to monkey (\d+)/)[1]);
-
-      monkeys[currentMonkey].test = {
-        divisibleBy,
-        true: ifTrue,
-        false: ifFalse,
-      };
-
-      i += 2; // We are taking three chunks of data in the if clause.
-      continue;
-    }
+    currentMonkey++;
   }
 
   return monkeys;
