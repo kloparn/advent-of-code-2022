@@ -5,8 +5,6 @@ function parseMonkeysInformation() {
   // const data = fs.readFileSync("data.example", "utf-8").split(/\r?\n/);
   const monkeys = [];
 
-  let currentMonkey = 0;
-
   for (let i = 0; i < data.length; i += 7) {
     const monkeyStartingItems = [
       ...data[i + 1]
@@ -14,6 +12,8 @@ function parseMonkeysInformation() {
         .map((val) => parseInt(val))
         .filter((val) => val),
     ];
+
+    const currentMonkeyIndex = Math.floor(i / 7);
 
     const monkeyOperation = `${data[i + 2].split(" ").at(-3)} ${data[i + 2].split(" ").at(-2)} ${data[i + 2].split(" ").at(-1)}`;
 
@@ -23,7 +23,7 @@ function parseMonkeysInformation() {
 
     const monkeyIfFalse = parseInt(data[i + 5].match(/throw to monkey (\d+)/)[1]);
 
-    monkeys[currentMonkey] = {
+    monkeys[currentMonkeyIndex] = {
       items: monkeyStartingItems,
       operation: monkeyOperation,
       test: {
@@ -33,8 +33,6 @@ function parseMonkeysInformation() {
       },
       inspectionsDone: 0,
     };
-
-    currentMonkey++;
   }
 
   return monkeys;
