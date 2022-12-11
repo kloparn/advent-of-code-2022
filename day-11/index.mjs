@@ -40,8 +40,10 @@ function parseMonkeysInformation() {
   return monkeys;
 }
 
-function part1(rounds) {
+function activateMonkeys(rounds, largeNumbers) {
   const monkeysCopy = JSON.parse(JSON.stringify(monkeys));
+
+  const modulo = monkeysCopy.reduce((val, curr) => val * curr.test.divisibleBy, 1);
 
   for (let round = 1; round <= rounds; round++) {
     for (const monkey of monkeysCopy) {
@@ -53,7 +55,7 @@ function part1(rounds) {
         itemWorryLevel = eval(monkey.operation.replaceAll("old", itemWorryLevel));
 
         // Item is not destroyed, so we reduce the worry level 3 times rounded down
-        itemWorryLevel = Math.floor(itemWorryLevel / 3);
+        itemWorryLevel = largeNumbers ? itemWorryLevel % modulo : Math.floor(itemWorryLevel / 3);
 
         if (itemWorryLevel % monkey.test.divisibleBy === 0) {
           const throwToMonkey = monkey.test.true;
@@ -67,59 +69,6 @@ function part1(rounds) {
       }
     }
   }
-
-  return monkeysCopy
-    .map((monkey) => monkey.inspectionsDone)
-    .sort((a, b) => b - a)
-    .slice(0, 2)
-    .reduce((sum, curr) => curr * sum, 1);
-}
-
-function part2(rounds) {
-  const monkeysCopy = JSON.parse(JSON.stringify(monkeys));
-
-  let modulo = 1;
-
-  // As the numbers are increadibly big after a point we can add all the divisible numbers together to create a more "unified" modulo.
-  // This in turn is much easier to handle and we keep the "integrity" of the original numbers size.
-  monkeysCopy.forEach((monkey) => (modulo *= monkey.test.divisibleBy));
-
-  // we set a timer to get the perfomance of the function.
-  let t0 = performance.now();
-
-  for (let round = 1; round <= rounds; round++) {
-    for (const monkey of monkeysCopy) {
-      while (monkey.items.length) {
-        // while the monkey still has items
-        let itemWorryLevel = monkey.items.shift();
-
-        // Monkey inspects the item, worry level is adjusted accodingly
-        itemWorryLevel = eval(monkey.operation.replaceAll("old", itemWorryLevel));
-
-        // We reduce by the global modulo
-        itemWorryLevel = itemWorryLevel % modulo;
-
-        if (itemWorryLevel % monkey.test.divisibleBy === 0) {
-          const throwToMonkey = monkey.test.true;
-          // as it is divisible by the test number we divide then another monkey gets it
-          // itemWorryLevel = itemWorryLevel / monkey.test.divisibleBy;
-
-          monkeysCopy[throwToMonkey].items.push(itemWorryLevel);
-        } else {
-          const throwToMonkey = monkey.test.false;
-
-          monkeysCopy[throwToMonkey].items.push(itemWorryLevel);
-        }
-
-        // This monkey has now inspected an item so we increment its actions done
-        monkey.inspectionsDone++;
-      }
-    }
-  }
-
-  let t1 = performance.now();
-
-  console.log("execution time for part 2: ", t1 - t0, " miliseconds");
 
   return monkeysCopy
     .map((monkey) => monkey.inspectionsDone)
@@ -129,5 +78,8 @@ function part2(rounds) {
 }
 
 const monkeys = parseMonkeysInformation();
-console.log(part1(20));
-console.log(part2(10_000));
+
+console.log(activateMonkeys(20));
+
+let t0 = performance.now();
+console.log(activateMonkeys(10_000, true), `part two took ${performance.now() - t0} miliseconds`);
