@@ -1,8 +1,8 @@
 import fs from "fs";
 
 function parseMonkeysInformation() {
-  const data = fs.readFileSync("data", "utf-8").split(/\r?\n/);
-  // const data = fs.readFileSync("data.example", "utf-8").split(/\r?\n/);
+  // const data = fs.readFileSync("data", "utf-8").split(/\r?\n/);
+  const data = fs.readFileSync("data.example", "utf-8").split(/\r?\n/);
   const monkeys = [];
 
   for (let i = 0; i < data.length; i += 7) {
@@ -52,7 +52,7 @@ function activateMonkeys(rounds, largeNumbers) {
         // Monkey inspects the item, worry level is adjusted accodingly
         itemWorryLevel = eval(monkey.operation.replaceAll("old", itemWorryLevel));
 
-        // Item is not destroyed, so we reduce the worry level 3 times rounded down
+        // Item is not destroyed, so we reduce the worry level 3 times rounded down or if its a large number by the global modulo
         itemWorryLevel = largeNumbers ? itemWorryLevel % modulo : Math.floor(itemWorryLevel / 3);
 
         if (itemWorryLevel % monkey.test.divisibleBy === 0) {
