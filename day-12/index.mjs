@@ -52,7 +52,51 @@ function part1(grid) {
   for (let elevationLevel = 0; elevationLevel < Object.keys(characterHashmap).length; elevationLevel++) {
     let goalCharacter = characterHashmap[elevationLevel + 1];
 
-    console.log({ currentCharacter, goalCharacter });
+    if (!goalCharacter) break;
+
+    const freshGrid = JSON.parse(JSON.stringify(grid));
+
+    let pathInstructions = findShortestPath(currentPosition, freshGrid, currentCharacter, goalCharacter);
+
+    if (!pathInstructions) {
+      let indexBackwards = 2;
+      while (true) {
+        const newCurrentCharacter = currentCharacter;
+        const newGoalCharacter = characterHashmap[elevationLevel - indexBackwards];
+        const newFreshGrid = JSON.parse(JSON.stringify(grid));
+        indexBackwards++;
+
+        pathInstructions = findShortestPath(currentPosition, newFreshGrid, newCurrentCharacter, newGoalCharacter);
+
+        if (pathInstructions) {
+          goalCharacter = newGoalCharacter;
+          break;
+        }
+      }
+      elevationLevel += indexBackwards * -1;
+    }
+
+    totalSteps += pathInstructions.length;
+
+    currentPosition = updatePosition(pathInstructions, currentPosition);
+    currentCharacter = goalCharacter;
+  }
+  return totalSteps;
+}
+
+function part2() {
+  const startArrayIndex = grid.findIndex((arr) => arr.find((char) => char === "S"));
+
+  const startPositionIndex = grid[startArrayIndex].findIndex((char) => char === "S");
+
+  let currentPosition = [25, 2];
+
+  let totalSteps = 0;
+
+  let currentCharacter = characterHashmap[1];
+
+  for (let elevationLevel = 1; elevationLevel < Object.keys(characterHashmap).length; elevationLevel++) {
+    let goalCharacter = characterHashmap[elevationLevel + 1];
 
     if (!goalCharacter) break;
 
@@ -80,12 +124,11 @@ function part1(grid) {
 
     totalSteps += pathInstructions.length;
 
-    console.log({ pathInstructions, currentCharacter, goalCharacter, currentPosition });
-
     currentPosition = updatePosition(pathInstructions, currentPosition);
     currentCharacter = goalCharacter;
   }
-  console.log(totalSteps);
+  return totalSteps;
 }
 
-part1(grid);
+console.log(part1(grid));
+console.log(part2(grid));
