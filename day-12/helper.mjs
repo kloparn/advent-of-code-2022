@@ -14,17 +14,11 @@ function findShortestPath(startCordinates, grid, currentCharacter, goal) {
   while (queue.length > 0) {
     const currentLocation = queue.shift();
 
-    // Explore North
-    let newLocation = exploreInDirection(currentLocation, "North", grid, currentCharacter, goal);
-
-    if (newLocation.status === "Goal") {
-      return newLocation.path;
-    } else if (newLocation.status === "Valid") {
-      queue.push(newLocation);
-    }
+    let newLocation;
 
     // Explore East
     newLocation = exploreInDirection(currentLocation, "East", grid, currentCharacter, goal);
+
     if (newLocation.status === "Goal") {
       return newLocation.path;
     } else if (newLocation.status === "Valid") {
@@ -33,6 +27,15 @@ function findShortestPath(startCordinates, grid, currentCharacter, goal) {
 
     // Explore South
     newLocation = exploreInDirection(currentLocation, "South", grid, currentCharacter, goal);
+
+    if (newLocation.status === "Goal") {
+      return newLocation.path;
+    } else if (newLocation.status === "Valid") {
+      queue.push(newLocation);
+    }
+
+    // Explore North
+    newLocation = exploreInDirection(currentLocation, "North", grid, currentCharacter, goal);
     if (newLocation.status === "Goal") {
       return newLocation.path;
     } else if (newLocation.status === "Valid") {
