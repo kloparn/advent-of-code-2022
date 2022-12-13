@@ -103,9 +103,9 @@ function part2() {
     index: Object.keys(parsedPackagesCopy).length + 1,
   };
 
-  const correctPackets = Object.values(parsedPackagesCopy).reduce((packets, curr) => [...packets, curr.left, curr.right], []);
+  const allPackets = Object.values(parsedPackagesCopy).reduce((packets, curr) => [...packets, curr.left, curr.right], []);
 
-  const sortedPackages = correctPackets.sort((package1, package2) => comparePackates(package1, package2));
+  const sortedPackages = allPackets.sort((package1, package2) => comparePackates(package1, package2));
 
   const findIndexOfTopDivider = sortedPackages.findIndex((pkg) => JSON.stringify(pkg) === "[[2]]") + 1;
   const findIndexOfBottomDivider = sortedPackages.findIndex((pkg) => JSON.stringify(pkg) === "[[6]]") + 1;
