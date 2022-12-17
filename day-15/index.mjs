@@ -1,91 +1,100 @@
 import fs from "fs";
 
 const data = fs.readFileSync("data", "utf-8").split(/\r?\n/);
-const dataExample = fs.readFileSync("data.example", "utf-8").split(/\r?\n/);
+// const data = fs.readFileSync("data.example", "utf-8").split(/\r?\n/);
 
-function buildGraph(data) {
-  // const REALLY_SMALL_NUMBER = -123456789;
-  // const REALLY_HUGE_NUMBER = Infinity;
-
-  const graphInformation = [];
+function setupSensorAndBeaconData(data) {
+  const beaconsAndSensors = [];
   for (const dataInformation of data) {
     const [sensorX, sensorY, beaconX, beaconY] = dataInformation.match(/-?[0-9]\d*(\.\d+)?/g);
 
-    graphInformation.push({ sensor: { x: parseInt(sensorX), y: parseInt(sensorY) }, closeBeacon: { x: parseInt(beaconX), y: parseInt(beaconY) } });
-    // graphInformation.push({ sensor: { x: parseInt(sensorX), y: parseInt(sensorY) } });
-    // graphInformation.push({ beacon: { x: parseInt(beaconX), y: parseInt(beaconY) } });
+    beaconsAndSensors.push({
+      sensor: { x: parseInt(sensorX), y: parseInt(sensorY) },
+      beacon: { x: parseInt(beaconX), y: parseInt(beaconY) },
+      distance: getDistance(sensorX, sensorY, beaconX, beaconY),
+    });
   }
 
-  console.log(graphInformation);
-
-  // getting min first then standarizing the data for easier handling later on with negative values.
-  // const minX = graphInformation.reduce((value, obj) => Math.min(obj.sensor.x, obj.beacon.x, value), REALLY_HUGE_NUMBER);
-  // const minY = graphInformation.reduce((value, obj) => Math.min(obj.sensor.y, obj.beacon.y, value), REALLY_HUGE_NUMBER);
-
-  // standardizedXValue = minX < 0 ? minX : 0;
-  // standardizedYValue = minY < 0 ? minY : 0;
-
-  // graphInformation.forEach((obj) => {
-  //   if (standardizedXValue < 0) {
-  //     obj.sensor.x += Math.abs(standardizedXValue);
-  //     obj.beacon.x += Math.abs(standardizedXValue);
-  //   }
-  //   if (standardizedYValue < 0) {
-  //     obj.sensor.y += Math.abs(standardizedYValue);
-  //     obj.beacon.y += Math.abs(standardizedYValue);
-  //   }
-  //   return obj;
-  // });
-
-  // const maxX = graphInformation.reduce((value, obj) => Math.max(obj.sensor.x, obj.beacon.x, value), REALLY_SMALL_NUMBER) + 1;
-  // const maxY = graphInformation.reduce((value, obj) => Math.max(obj.sensor.y, obj.beacon.y, value), REALLY_SMALL_NUMBER) + 1;
-
-  // const graph = Array.from({ length: maxY }, () => Array.from({ length: maxX }, (_, idx) => ""));
-
-  // console.log("Done building the graph");
-
-  // for (const fillStep of graphInformation) {
-  //   graph[fillStep.sensor.y][fillStep.sensor.x] = "S";
-  //   graph[fillStep.beacon.y][fillStep.beacon.x] = "B";
-  // }
-
-  // console.log("filled graph");
-
-  // prettyPrint(graph);
-
-  return graphInformation;
+  return beaconsAndSensors;
 }
 
-function prettyPrint(graph) {
-  graph.forEach((row) => console.log(JSON.stringify(row).replaceAll('"', "").replaceAll(",", " ")));
+function getDistance(sensorX, sensorY, beaconX, beaconY) {
+  return Math.abs(sensorX - beaconX) + Math.abs(sensorY - beaconY);
 }
 
-function exampleRun(caveSystem) {
-  // console.log(dataExample);
+function getIntersectionsForRow(sensorsAndBeacons, row) {
+  const sensors = [];
 
-  /* psudo code
-  Get distance between min X and max X to determine the MAXIMUM places beacons can exist on a row.
-  create SINGLE dimension array with the distance with each slot as empty or ".".
-  Loop through all beacons and sensor values
-    Check if their positions in someway intercept the row we are given.
-      If it does intercept, calculate the height after the interception on the opposite side of the sensor
-      take the distance between the interception point and reduce it by 1 then add it to the place of interception.
-      like this -> row[interceptionPoint - (distanceOfInterceptionToBeacon - 1)] = "#" to row[interceptionPoint + (distanceOfInterceptionToBeacon - 1)] = "#"
-      then repeat until empty
+  for (const { sensor, distance } of sensorsAndBeacons) {
+    if (Math.abs(row - sensor.y) < distance) {
+      const distanceToY = Math.abs(row - sensor.y);
+      sensors.push([sensor.x - (distance - distanceToY), sensor.x + (distance - distanceToY)]);
+    }
+  }
 
-      if it does not, skip to next sensor / beacon.
-  Get amount of slots in the created array that has the value "#"
-  */
-
-  return 0;
+  // we sort it from biggest to largest as we go left to right in future checks
+  return sensors.sort((a, b) => a[0] - b[0]);
 }
 
-const sensorsAndBeacons = buildGraph(dataExample);
-// const sensorsAndBeacons = buildGraph(data);
+function part1(sensorsAndBeacons, row) {
+  const coveredXRanges = getIntersectionsForRow(sensorsAndBeacons, row);
 
-console.log(exampleRun(sensorsAndBeacons));
+  let coveredCount = 0;
 
-// let t0 = performance.now();
-// console.log(part1(caveCopyForPart1, dripPointPart1), ` ${performance.now() - t0}`);
-// t0 = performance.now();
-// console.log(part2(caveCopyForPart2, dripPointPart2), ` ${performance.now() - t0}`);
+  // coveredRanges are sorted from smallest to biggest, so this range counting works
+  let [start, end] = coveredXRanges.shift();
+
+  for (const [rangeStart, rangeEnd] of coveredXRanges) {
+    if (rangeStart > end) {
+      coveredCount += end - start + 1;
+      start = rangeStart;
+      end = rangeEnd;
+    } else if (rangeEnd > end) {
+      end = rangeEnd;
+    }
+  }
+
+  // this is the covered amount on the row, but we have so far not "excluded" the beacons on the row!
+  coveredCount += end - start + 1;
+
+  // Some of the sensors has the same beacon as their closest one, so we want only unique beacons
+  const uniqueBeacons = sensorsAndBeacons.reduce(
+    (beacons, currSensorAndBeacon) =>
+      !beacons[`${currSensorAndBeacon.beacon.x},${currSensorAndBeacon.beacon.y}`]
+        ? { ...beacons, [`${currSensorAndBeacon.beacon.x},${currSensorAndBeacon.beacon.y}`]: currSensorAndBeacon.beacon }
+        : beacons,
+    {}
+  );
+
+  const beaconsOnRow = Object.values(uniqueBeacons).filter((beacon) => beacon.y === row).length;
+
+  return coveredCount - beaconsOnRow;
+}
+
+function part2(sensorsAndBeacons, MAX_ROW) {
+  for (let row = 0; row < MAX_ROW; row++) {
+    const coveredXRanges = getIntersectionsForRow(sensorsAndBeacons, row);
+
+    let end = coveredXRanges.shift()[1];
+
+    const emptySpaceColumn = coveredXRanges.reduce((emptySpace, currRange) => {
+      for (const [rangeStart, rangeEnd] of coveredXRanges) {
+        if (rangeStart > end) return rangeStart - 1; // we have found the "empty" spot for the beacon
+        else if (rangeEnd > end) end = rangeEnd;
+      }
+
+      return emptySpace;
+    }, null);
+
+    if (emptySpaceColumn) {
+      return emptySpaceColumn * MAX_ROW + row;
+    }
+  }
+}
+
+const sensorsAndBeacons = setupSensorAndBeaconData(data);
+
+let t0 = performance.now();
+console.log(part1(sensorsAndBeacons, 10), ` ${performance.now() - t0}`);
+t0 = performance.now();
+console.log(part2(sensorsAndBeacons, 4_000_000), ` ${performance.now() - t0}`);
