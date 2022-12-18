@@ -1,10 +1,13 @@
 import fs from "fs";
 
-// const data = fs.readFileSync("data", "utf-8").split(/\r?\n/);
-const data = fs.readFileSync("data.example", "utf-8").split(/\r?\n/);
+const data = fs.readFileSync("data", "utf-8").split(/\r?\n/);
+// const data = fs.readFileSync("data.example", "utf-8").split(/\r?\n/);
 
-function getValveInformation(data) {
-  const valves = {};
+function setupStates(data) {
+  const state = {
+    points: {},
+    routes: {},
+  };
 
   for (const valveInformation of data) {
     const valveName = valveInformation.match(/Valve ([A-Z]+)/)[1];
@@ -12,75 +15,45 @@ function getValveInformation(data) {
     const valveInfo = valveInformation.split(" ");
     const leadsToValve = valveInfo.slice(9).map((valveName) => valveName.replace(",", ""));
 
-    valves[valveName] = {
-      status: flowRate === 0 ? "open" : "closed",
-      flowRate,
-      leadsToValve,
-    };
-  }
-
-  return valves;
-}
-
-function getBestPathToTake(valves, currValve) {
-  let bestPath = currValve.leadsToValve.reduce((path, currPath) => {
-    const tempValve = valves[currPath];
-
-    if (tempValve.status === "closed" && (tempValve?.flowRate > path[1]?.flowRate || !path[1])) {
-      path = currPath;
-    }
-
-    return path;
-  }, "");
-
-  return bestPath.length > 0 ? bestPath : null;
-}
-
-function part1(valves, minutes) {
-  const elephantStartRoom = "AA";
-  let currentValveName = elephantStartRoom;
-  let totalPressureReleased = 0;
-  let releaseRate = 0;
-  for (let timeLeft = minutes - 1; timeLeft >= 0; timeLeft--) {
-    totalPressureReleased += releaseRate;
-
-    const currentValve = valves[currentValveName];
-
-    console.log({ currentValve, currentValveName, timeLeft, totalPressureReleased, releaseRate });
-
-    // we check if we find a path that is bigger than the one we are currently on!
-    const nextPath = getBestPathToTake(valves, currentValve);
-    if (nextPath && currentValve.flowRate < valves[nextPath].flowRate) {
-      currentValveName = nextPath;
-      continue;
-    }
-
-    // if the current valve we are standing at is open we close it and continue;
-    if (currentValve.status === "closed") {
-      currentValve.status = "open";
-      releaseRate += currentValve.flowRate;
-      continue;
-    }
-
-    // the valve we are at is open so we go to the next one
-    if (currentValve.status === "open") {
-      const bestPathName = getBestPathToTake(valves, currentValve);
-
-      // const // we move to the location
-
-      currentValveName = bestPathName;
-      // console.log({ currentValve, timeLeft, bestPath, valve });
+    state.points[valveName] = flowRate;
+    for (const valve of leadsToValve) {
+      if (state.routes[valveName]) state.routes[valveName].push(valve);
+      else state.routes[valveName] = [valve];
     }
   }
 
-  return totalPressureReleased;
+  return state;
 }
 
-const valves = getValveInformation(data);
+const valves = setupStates(data);
 
-// console.log(valves);
+const dp = {};
+function part1(valve, openValves, timeLeft) {
+  if (timeLeft === 0) return 0;
+  const key = `${valve} ${Object.keys(openValves).sort().join("")} ${timeLeft}`;
+  if (dp[key] !== undefined) {
+    return dp[key];
+  }
+
+  let ans = 0;
+  if (timeLeft > 0 && openValves[valve] === undefined && valves.points[valve] > 0) {
+    const tempOpenValves = JSON.parse(JSON.stringify(openValves));
+    tempOpenValves[valve] = 1;
+    ans = Math.max(ans, Object.keys(openValves).reduce((sum, k) => sum + valves.points[k], 0) + part1(valve, tempOpenValves, timeLeft - 1));
+  }
+  if (timeLeft > 0) {
+    for (const v of valves.routes[valve]) {
+      ans = Math.max(ans, Object.keys(openValves).reduce((sum, k) => sum + valves.points[k], 0) + part1(v, openValves, timeLeft - 1));
+    }
+  }
+  dp[key] = ans;
+  return ans;
+}
+
+console.log(valves);
 
 let t0 = performance.now();
-console.log(part1(valves, 30), ` ${performance.now() - t0}`);
+// part1();
+console.log(part1("AA", {}, 30), ` ${performance.now() - t0}`);
 // t0 = performance.now();
 // console.log(part2(sensorsAndBeacons, 4_000_000), ` ${performance.now() - t0}`);
