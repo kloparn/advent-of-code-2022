@@ -80,56 +80,133 @@ const part1 = (movePattern) => {
   return rockHeight;
 };
 
+let heighestPoint = 0;
+let rockIndex = 0;
+let movePatternIndex = 0;
+const stationaryRocks = {};
+const placeRock = (movePattern) => {
+  const rocks = getFreshRocks();
+  const currentRock = rocks[rockIndex++ % rocks.length];
+
+  updateToRightElevation(currentRock, heighestPoint);
+
+  let shouldFallNextMove = false;
+  while (true) {
+    if (!shouldFallNextMove) {
+      //Gas turn to move the stone left or right
+
+      // we get the gas move
+      const moveX = movePattern[movePatternIndex++ % movePattern.length] === ">" ? 1 : -1;
+
+      // we move the rock left or right
+      currentRock.forEach((chunk) => (chunk.x += moveX));
+
+      // we check that the move we just did is invalid
+      // if so we revert the move
+      const collisionResult = collisionCheck(currentRock, stationaryRocks);
+
+      if (collisionResult === "WALL" || collisionResult === "ROCK") currentRock.forEach((chunk) => (chunk.x -= moveX));
+    } /* stone falls */ else {
+      // move the stone down 1 level
+      currentRock.forEach((chunk) => chunk.y--);
+
+      // we check that the move we just did is invalid
+      // if so we revert the move & the rock becomes 'stationary'
+      const collisionResult = collisionCheck(currentRock, stationaryRocks);
+      if (collisionResult === "ROCK" || collisionResult === "FLOOR") {
+        // revert move to get right height & add it to the stationary set
+        currentRock.forEach((chunk) => (chunk.y++, (stationaryRocks[`${chunk.x},${chunk.y}`] = 1)));
+
+        heighestPoint = getTallestPoint(currentRock, heighestPoint);
+        break;
+      }
+    }
+
+    // flip the condition for falling/moving;
+    shouldFallNextMove = !shouldFallNextMove;
+  }
+
+  return currentRock;
+};
+
+const checkIfRepeatingPattern = (rock) => {
+  let pattern = [];
+
+  let minY = Infinity;
+  let maxY = 0;
+
+  for (const chunk of rock) {
+    minY = Math.min(minY, chunk.y);
+    maxY = Math.max(maxY, chunk.y);
+  }
+
+  for (let y = minY; y <= maxY; y++) for (let x = 1; x <= 7; x++) if (stationaryRocks[`${x},${y}`]) pattern.push(`x:${x}`);
+
+  for (let y = minY; y <= maxY; y++) {
+    let isInRow = true;
+    for (let x = 1; x <= 7; x++) {
+      if (!stationaryRocks[`${x},${y}`]) {
+        isInRow = false;
+        break;
+      }
+    }
+    if (isInRow) return pattern;
+  }
+  return false;
+};
+
 const part2 = (movePattern) => {
-  const stationaryRocks = {};
-  let rockHeight = 0;
+  let placed = 0;
 
-  let movePatternIndex = 0;
+  let startPoint = 0;
+  let startPlaced = 0;
 
-  for (let i = 0; i < 1_000_000_000_000; i++) {
-    const rocks = getFreshRocks();
-    const currentRock = rocks[i % rocks.length];
+  const patternHash = {};
 
-    updateToRightElevation(currentRock, rockHeight);
+  while (true) {
+    const placedRock = placeRock(movePattern);
+    placed++;
 
-    let shouldFallNextMove = false;
-    while (true) {
-      if (!shouldFallNextMove) {
-        //Gas turn to move the stone left or right
+    const pattern = checkIfRepeatingPattern(placedRock);
 
-        // we get the gas move
-        const moveX = movePattern[movePatternIndex++ % movePattern.length] === ">" ? 1 : -1;
+    if (pattern) {
+      if (patternHash[pattern.join("")]) {
+        const { nextBlock, comingPattern, heighestPointAtHashTime, numberOfRocksPlacedAtHashTime } = patternHash[pattern.join("")];
 
-        // we move the rock left or right
-        currentRock.forEach((chunk) => (chunk.x += moveX));
-
-        // we check that the move we just did is invalid
-        // if so we revert the move
-        const collisionResult = collisionCheck(currentRock, stationaryRocks);
-
-        if (collisionResult === "WALL" || collisionResult === "ROCK") currentRock.forEach((chunk) => (chunk.x -= moveX));
-      } /* stone falls */ else {
-        // move the stone down 1 level
-        currentRock.forEach((chunk) => chunk.y--);
-
-        // we check that the move we just did is invalid
-        // if so we revert the move & the rock becomes 'stationary'
-        const collisionResult = collisionCheck(currentRock, stationaryRocks);
-        if (collisionResult === "ROCK" || collisionResult === "FLOOR") {
-          // revert move to get right height & add it to the stationary set
-          currentRock.forEach((chunk) => (chunk.y++, (stationaryRocks[`${chunk.x},${chunk.y}`] = 1)));
-
-          rockHeight = getTallestPoint(currentRock, rockHeight);
+        if (
+          placed % rocks.length === nextBlock &&
+          comingPattern ===
+            movePattern
+              .split("")
+              .slice(movePatternIndex % movePattern.length)
+              .join("")
+        ) {
+          startPoint = heighestPointAtHashTime;
+          startPlaced = numberOfRocksPlacedAtHashTime;
           break;
         }
       }
-
-      // flip the condition for falling/moving;
-      shouldFallNextMove = !shouldFallNextMove;
+      patternHash[pattern.join("")] = {
+        nextBlock: placed % rocks.length,
+        comingPattern: movePattern
+          .split("")
+          .slice(movePatternIndex % movePattern.length)
+          .join(""),
+        heighestPointAtHashTime: heighestPoint,
+        numberOfRocksPlacedAtHashTime: placed,
+      };
     }
   }
 
-  return rockHeight;
+  const remaining = 1_000_000_000_000 - placed;
+  const gainedPer = heighestPoint - startPoint;
+  const repeatCount = Math.floor(remaining / (placed - startPlaced));
+  const gained = repeatCount * gainedPer;
+  const remainder = remaining % (placed - startPlaced);
+
+  for (let i = 0; i < remainder; i++) placeRock(movePattern);
+
+  return gained + heighestPoint;
 };
 
 let t0 = performance.now();
