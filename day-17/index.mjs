@@ -9,7 +9,7 @@ const collisionCheck = (rock, stationaryRocks) => {
   // we split the rock up into chunks
   for (let chunk of rock) {
     // rock is on another settled rock.
-    if (stationaryRocks.has(`${chunk.x},${chunk.y}`)) return "ROCK";
+    if (stationaryRocks[`${chunk.x},${chunk.y}`]) return "ROCK";
 
     // rock is at the floor level
     if (chunk.y < 1) return "FLOOR";
@@ -29,7 +29,7 @@ const getTallestPoint = (rock, tallestPoint) => rock.reduce((_tallestPoint, curr
 const updateToRightElevation = (rock, elevateTo) => rock.forEach((chunk) => ((chunk.y += elevateTo + 4), (chunk.x += 3)));
 
 const part1 = (movePattern) => {
-  const stationaryRocks = new Set();
+  const stationaryRocks = {};
   let rockHeight = 0;
 
   let movePatternIndex = 0;
@@ -65,7 +65,7 @@ const part1 = (movePattern) => {
         const collisionResult = collisionCheck(currentRock, stationaryRocks);
         if (collisionResult === "ROCK" || collisionResult === "FLOOR") {
           // revert move to get right height & add it to the stationary set
-          currentRock.forEach((chunk) => (chunk.y++, stationaryRocks.add(`${chunk.x},${chunk.y}`)));
+          currentRock.forEach((chunk) => (chunk.y++, (stationaryRocks[`${chunk.x},${chunk.y}`] = 1)));
 
           rockHeight = getTallestPoint(currentRock, rockHeight);
           break;
@@ -81,12 +81,12 @@ const part1 = (movePattern) => {
 };
 
 const part2 = (movePattern) => {
-  const stationaryRocks = new Set();
+  const stationaryRocks = {};
   let rockHeight = 0;
 
   let movePatternIndex = 0;
 
-  for (let i = 0; i < 1000000000000; i++) {
+  for (let i = 0; i < 1_000_000_000_000; i++) {
     const rocks = getFreshRocks();
     const currentRock = rocks[i % rocks.length];
 
@@ -117,7 +117,7 @@ const part2 = (movePattern) => {
         const collisionResult = collisionCheck(currentRock, stationaryRocks);
         if (collisionResult === "ROCK" || collisionResult === "FLOOR") {
           // revert move to get right height & add it to the stationary set
-          currentRock.forEach((chunk) => (chunk.y++, stationaryRocks.add(`${chunk.x},${chunk.y}`)));
+          currentRock.forEach((chunk) => (chunk.y++, (stationaryRocks[`${chunk.x},${chunk.y}`] = 1)));
 
           rockHeight = getTallestPoint(currentRock, rockHeight);
           break;
